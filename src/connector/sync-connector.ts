@@ -15,6 +15,13 @@ export class SyncConnector extends Connector {
     sync: any;
 
     /**
+     * The Sync identifier
+     *
+     * @type {string}
+     */
+    identity: any;
+
+    /**
      * All of the subscribed channel names.
      *
      * @type {array}
@@ -32,6 +39,7 @@ export class SyncConnector extends Connector {
         } else {
             this.sync = new SyncClient(this.options.token, this.options);
         }
+        this.identity = this.options.identity;
     }
 
     /**
@@ -123,15 +131,15 @@ export class SyncConnector extends Connector {
      * @return {string}
      */
     socketId(): string {
-        return this.sync.connection.socket_id;
+        return this.identity;
     }
 
     /**
-     * Disconnect Pusher connection.
+     * Disconnect Sync connection.
      *
      * @return void
      */
     disconnect(): void {
-        this.sync.disconnect();
+        this.sync.shutdown();
     }
 }

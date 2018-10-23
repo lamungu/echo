@@ -11,7 +11,7 @@ export class SyncPrivateChannel extends SyncChannel {
      * @return {SyncPrivateChannel}
      */
     whisper(eventName, data): SyncPrivateChannel {
-        this.pusher.channels.channels[this.name].trigger(`client-${eventName}`, data);
+        this.sync.channels.channels[this.name].trigger(`client-${eventName}`, data);
 
         return this;
     }
