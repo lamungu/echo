@@ -1,6 +1,6 @@
 import { EventFormatter } from './util';
 import { Channel, PresenceChannel } from './channel'
-import { PusherConnector, SocketIoConnector, NullConnector } from './connector';
+import { PusherConnector, SocketIoConnector, NullConnector, SyncConnector } from './connector';
 
 /**
  * This class is the primary API for interacting with broadcasting.
@@ -47,6 +47,8 @@ class Echo {
             this.connector = new SocketIoConnector(this.options);
         } else if (this.options.broadcaster == 'null') {
             this.connector = new NullConnector(this.options);
+        } else if (this.options.broadcaster == 'sync') {
+            this.connector = new SyncConnector(this.options);
         }
     }
 
