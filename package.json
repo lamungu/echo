@@ -34,12 +34,12 @@
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-2": "^6.5.0",
     "jest": "^22.1.0",
-    "twilio-sync": "^0.8.5",
-    "pusher-js": "^3.2.1",
+    "pusher-js": "^3.2.4",
     "rollup": "^0.31.0",
     "rollup-plugin-babel": "^2.4.0",
     "rollup-plugin-typescript": "^0.7.5",
-    "ts-jest": "^22.0.0"
+    "ts-jest": "^22.0.0",
+    "twilio-sync": "^0.8.5"
   },
   "jest": {
     "transform": {

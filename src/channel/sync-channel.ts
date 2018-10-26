@@ -1,4 +1,4 @@
-import { EventFormatter } from '../util';
+import { EventFormatter, EventListener } from '../util';
 import { Channel } from './channel';
 
 /**
@@ -34,11 +34,17 @@ export class SyncChannel extends Channel {
     eventFormatter: EventFormatter;
 
     /**
-     * The subsciption of the channel.
+     * The list of events
+     * @type {EventListener[]}
+     */
+    events: any = [];
+
+    /**
+     * The stream of the channel.
      *
      * @type {any}
      */
-    subscription: any;
+    stream: any;
 
     /**
      * Create a new class instance.
@@ -62,11 +68,49 @@ export class SyncChannel extends Channel {
     /**
      * Subscribe to a Sync channel.
      *
-     * @param  {string} channel
      * @return {object}
      */
     subscribe(): any {
-        this.subscription = this.sync.subscribe(this.name);
+        this.stream = this.createStreamInstance(this.name)
+    }
+
+    /**
+     * Creates a stream instance
+     * @param name
+     */
+    createStreamInstance(name: any) {
+        return this.authorize().then(() => {
+            console.log(name);
+            return this.sync.stream(name).then((stream) => {
+                stream.on('messagePublished', (args) => {
+                    console.log(args);
+                });
+                return stream;
+            });
+        });
+    }
+
+    attachEventListeners(stream: any) {
+        console.log('setting up stream mmessage');
+        console.log(stream);
+        stream.on('messagePublished', (args) => {
+            let type = args.message.value.type;
+            console.log(type);
+            console.log(args);
+            this.events.map((event) => {
+                if (event.getName() === type) {
+                    event.call(args.message.value.payload)
+                }
+            });
+        });
+        return stream;
+    }
+
+    /**
+     * Verify if user is authorized to subscribe to the channel
+     */
+    authorize(): Promise<any> {
+        return axios.create({baseURL:'/'}).post(this.options.authEndpoint, {socket_id:this.options.identity, channel_name: this.name})
     }
 
     /**
@@ -75,7 +119,7 @@ export class SyncChannel extends Channel {
      * @return {void}
      */
     unsubscribe(): void {
-        this.sync.unsubscribe(this.name);
+        //this.sync.unsubscribe(this.name);
     }
 
     /**
@@ -86,8 +130,10 @@ export class SyncChannel extends Channel {
      * @return {SyncChannel}
      */
     listen(event: string, callback: Function): SyncChannel {
-        this.on(this.eventFormatter.format(event), callback);
-
+        this.events = [
+            ...this.events,
+            new EventListener(event, callback)
+        ];
         return this;
     }
 
@@ -98,21 +144,7 @@ export class SyncChannel extends Channel {
      * @return {SyncChannel}
      */
     stopListening(event: string): SyncChannel {
-        this.subscription.unbind(this.eventFormatter.format(event));
-
-        return this;
-    }
-
-    /**
-     * Bind a channel to an event.
-     *
-     * @param  {string}   event
-     * @param  {Function} callback
-     * @return {void}
-     */
-    on(event: string, callback: Function): SyncChannel {
-        this.subscription.bind(event, callback);
-
+        //this.stream.unbind(this.eventFormatter.format(event));
         return this;
     }
 }

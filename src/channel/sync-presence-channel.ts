@@ -5,17 +5,50 @@ import { PresenceChannel } from './presence-channel';
  * This class represents a Pusher presence channel.
  */
 export class SyncPresenceChannel extends SyncChannel implements PresenceChannel {
+
     /**
-     * Register a callback to be called anytime the member list changes.
+     * The map of the channel.
+     *
+     * @type {any}
+     */
+    map: any;
+
+    constructor(sync: any, name: any, options: any) {
+        super(sync, name, options);
+        this.join();
+    }
+
+
+    /**
+     * Subscribe to a Sync channel.
+     *
+     * @return {object}
+     */
+    join(): any {
+        this.map = this.createMapInstance(this.name)
+    }
+
+    createMapInstance(name: any) {
+        return this.authorize().then(({data}) => (
+            this.sync.map(name).then(map => {
+                map.set(this.options.identity, data);
+                return map;
+            })
+        ));
+    }
+
+    /**
+     * Register a callback to be called when the agent connects to the channel
      *
      * @param  {Function} callback
      * @return {object} this
      */
     here(callback): SyncPresenceChannel {
-        this.on('pusher:subscription_succeeded', (data) => {
-            callback(Object.keys(data.members).map(k => data.members[k]));
+        this.map.then(map => {
+            map.getItems().then(({items}) => {
+                callback(items.map(({value}) => value));
+            });
         });
-
         return this;
     }
 
@@ -26,10 +59,11 @@ export class SyncPresenceChannel extends SyncChannel implements PresenceChannel 
      * @return {SyncPresenceChannel}
      */
     joining(callback): SyncPresenceChannel {
-        this.on('pusher:member_added', (member) => {
-            callback(member.info);
+        this.map.then(map => {
+            map.on('itemAdded', ({item}) => {
+                callback(item.value)
+            });
         });
-
         return this;
     }
 
@@ -40,10 +74,11 @@ export class SyncPresenceChannel extends SyncChannel implements PresenceChannel 
      * @return {SyncPresenceChannel}
      */
     leaving(callback): SyncPresenceChannel {
-        this.on('pusher:member_removed', (member) => {
-            callback(member.info);
+        this.map.then(map => {
+            map.on('itemRemoved', ({item}) => {
+                callback(item.value);
+            });
         });
-
         return this;
     }
 
@@ -54,8 +89,7 @@ export class SyncPresenceChannel extends SyncChannel implements PresenceChannel 
      * @return {SyncPresenceChannel}
      */
     whisper(eventName, data): SyncPresenceChannel {
-        this.sync.channels.channels[this.name].trigger(`client-${eventName}`, data);
-
+        this.stream.publishMessage({ eventName, data});
         return this;
     }
 }

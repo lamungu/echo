@@ -39,6 +39,9 @@ export class SyncConnector extends Connector {
         } else {
             this.sync = new SyncClient(this.options.token, this.options);
         }
+        if (typeof this.options.onTokenExpiring !== 'undefined') {
+            this.sync.on('tokenAboutToExpire', () => this.options.onTokenExpiring(this.sync))
+        }
         this.identity = this.options.identity;
     }
 
@@ -111,7 +114,7 @@ export class SyncConnector extends Connector {
     /**
      * Leave the given channel.
      *
-     * @param  {string} channel
+     * @param  {string} name
      */
     leave(name: string) {
         let channels = [name, 'private-' + name, 'presence-' + name];
