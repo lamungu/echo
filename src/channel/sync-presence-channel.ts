@@ -1,23 +1,27 @@
 import { SyncChannel } from './sync-channel';
 import { PresenceChannel } from './presence-channel';
 
+const pageHandler = async (items, paginator, callback) => {
+    items = [
+        ...items,
+        ...items.map(({value}) => value)
+    ];
+    if (paginator.hasNextPage) {
+        let nextPaginator = await paginator.nextPage();
+        await pageHandler(items, nextPaginator, callback)
+    } else {
+        callback(items);
+    }
+};
 /**
  * This class represents a Pusher presence channel.
  */
 export class SyncPresenceChannel extends SyncChannel implements PresenceChannel {
 
-    /**
-     * The map of the channel.
-     *
-     * @type {any}
-     */
-    map: any;
-
     constructor(sync: any, name: any, options: any) {
         super(sync, name, options);
         this.join();
     }
-
 
     /**
      * Subscribe to a Sync channel.
@@ -25,16 +29,11 @@ export class SyncPresenceChannel extends SyncChannel implements PresenceChannel 
      * @return {object}
      */
     join(): any {
-        this.map = this.createMapInstance(this.name)
-    }
-
-    createMapInstance(name: any) {
-        return this.authorize().then(({data}) => (
-            this.sync.map(name).then(map => {
-                map.set(this.options.identity, data);
-                return map;
-            })
-        ));
+        //todo: give the information of the person here
+        this.map.then(map => {
+            map.set('presence-' + this.options.identity, {identity: this.options.identity});
+            return map;
+        });
     }
 
     /**
@@ -45,9 +44,7 @@ export class SyncPresenceChannel extends SyncChannel implements PresenceChannel 
      */
     here(callback): SyncPresenceChannel {
         this.map.then(map => {
-            map.getItems().then(({items}) => {
-                callback(items.map(({value}) => value));
-            });
+            map.getItems({from:'presence-', pageSize:100}).then((paginator) => pageHandler([], paginator, callback));
         });
         return this;
     }
@@ -85,11 +82,12 @@ export class SyncPresenceChannel extends SyncChannel implements PresenceChannel 
     /**
      * Trigger client event on the channel.
      *
-     * @param  {Function}  callback
+     * @param  {Function}  eventName
+     * @param  {object}  data
      * @return {SyncPresenceChannel}
      */
     whisper(eventName, data): SyncPresenceChannel {
-        this.stream.publishMessage({ eventName, data});
+        this.map.publishMessage({ eventName, data});
         return this;
     }
 }

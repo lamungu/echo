@@ -40,11 +40,11 @@ export class SyncChannel extends Channel {
     events: any = [];
 
     /**
-     * The stream of the channel.
+     * The map of the channel.
      *
      * @type {any}
      */
-    stream: any;
+    map: any;
 
     /**
      * Create a new class instance.
@@ -71,39 +71,23 @@ export class SyncChannel extends Channel {
      * @return {object}
      */
     subscribe(): any {
-        this.stream = this.createStreamInstance(this.name)
+        this.map = this.createMapInstance(this.name)
     }
 
     /**
-     * Creates a stream instance
+     * Creates a map instance
      * @param name
      */
-    createStreamInstance(name: any) {
+    createMapInstance(name: any): any {
         return this.authorize().then(() => {
-            console.log(name);
-            return this.sync.stream(name).then((stream) => {
-                stream.on('messagePublished', (args) => {
+            return this.sync.map(name).then((map) => {
+                // attach all event listeners
+                map.on('itemAdded', (args) => {
                     console.log(args);
                 });
-                return stream;
+                return map;
             });
         });
-    }
-
-    attachEventListeners(stream: any) {
-        console.log('setting up stream mmessage');
-        console.log(stream);
-        stream.on('messagePublished', (args) => {
-            let type = args.message.value.type;
-            console.log(type);
-            console.log(args);
-            this.events.map((event) => {
-                if (event.getName() === type) {
-                    event.call(args.message.value.payload)
-                }
-            });
-        });
-        return stream;
     }
 
     /**
@@ -144,7 +128,7 @@ export class SyncChannel extends Channel {
      * @return {SyncChannel}
      */
     stopListening(event: string): SyncChannel {
-        //this.stream.unbind(this.eventFormatter.format(event));
+        //this.map.unbind(this.eventFormatter.format(event));
         return this;
     }
 }
